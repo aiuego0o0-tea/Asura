@@ -122,7 +122,70 @@
 
 
 /* ---------------------------------------------------------
-   5. Artist card: ホバー時に曲数バッジを表示
+   5. Ember particles — canvas で火の粉を演出
+   --------------------------------------------------------- */
+(function emberParticles() {
+  const canvas = document.querySelector('.ember-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  const COLORS = ['#ff6a00','#ff9500','#ffc200','#c9a84c','#ff3300'];
+
+  class Ember {
+    constructor() { this.reset(true); }
+
+    reset(init = false) {
+      this.x   = Math.random() * canvas.width;
+      this.y   = init ? Math.random() * canvas.height : canvas.height + 4;
+      this.r   = Math.random() * 1.8 + 0.5;
+      this.vx  = (Math.random() - 0.5) * 0.6;
+      this.vy  = -(Math.random() * 1.2 + 0.4);
+      this.life = 0;
+      this.maxLife = Math.random() * 180 + 80;
+      this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    }
+
+    update() {
+      this.x += this.vx + Math.sin(this.life * 0.04) * 0.3;
+      this.y += this.vy;
+      this.life++;
+      if (this.life > this.maxLife || this.y < -10) this.reset();
+    }
+
+    draw() {
+      const alpha = Math.sin((this.life / this.maxLife) * Math.PI) * 0.85;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  const embers = Array.from({ length: 60 }, () => new Ember());
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    embers.forEach(e => { e.update(); e.draw(); });
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+
+/* ---------------------------------------------------------
+   7. Artist card: ホバー時に曲数バッジを表示
    --------------------------------------------------------- */
 (function songCountBadge() {
   document.querySelectorAll('.artist-card').forEach((card) => {
